@@ -1,17 +1,17 @@
-# {getAllBigCommerce(limit:2,offset:0){
-#   total
-#   items{
-#     storeId
-#   }
+{getAllBigCommerce(limit:2,offset:0){
+  total
+  items{
+    storeId
+  }
   
-# }}
+}}
 
-# {
-#   getBigCommerce(id:1){
-#     storeId,
-#     id
-#   }
-# }
+{
+  getBigCommerce(id:1){
+    storeId,
+    id
+  }
+}
 
 mutation {
   createBigCommerce(token: "my_test_token", storeId: "12345") {
@@ -26,16 +26,16 @@ mutation {
 }
 
 
-# mutation {
-#   updateBigCommerce(id: 1, token: "test12345", storeId: "67890") {
-#     bigCommerce {
-#       id
-#       token
-#       storeId
-#       createdAt
-#     }
-#   }
-# }
+mutation {
+  updateBigCommerce(id: 1, token: "test12345", storeId: "67890") {
+    bigCommerce {
+      id
+      token
+      storeId
+      createdAt
+    }
+  }
+}
 
 
 curl -X POST http://127.0.0.1:5000/graphql \
