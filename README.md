@@ -1,4 +1,4 @@
-# Flask GraphQl(Basic in python)
+# Flask GraphQL(Basic in python)
 
 A brief description of what this project does and who it's for
 
