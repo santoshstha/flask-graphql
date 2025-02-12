@@ -1,0 +1,6 @@
+Flask
+PyYAML==6.0.1
+Flask-GraphQL
+graphene
+flask-orator
+PyMySQL

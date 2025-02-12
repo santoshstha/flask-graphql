@@ -1,0 +1,138 @@
+import os
+from flask import Flask
+from flask_graphql import GraphQLView
+from orator import DatabaseManager, Model
+from graphene import ObjectType, String, Int, Field, Mutation, Schema, List
+from datetime import datetime
+
+app = Flask(__name__)
+
+db_config = {
+    'mysql': {
+        'driver': 'mysql',
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'database': os.getenv('DB_NAME', 'your_database'),
+        'port': int(os.getenv('DB_PORT', 3307)),  # Read port from env
+        'user': os.getenv('DB_USER', 'your_user'),
+        'password': os.getenv('DB_PASSWORD', 'your_password'),
+        'prefix': ''
+    }
+}
+
+db = DatabaseManager(db_config)
+Model.set_connection_resolver(db)
+
+
+class BigCommerce(Model):
+    __table__ = 'bigcommerce_clients'
+    __primary_key__ = 'id'
+    __timestamps__ = False
+    __fillable__ = ['token', 'store_id', 'created_at', 'updated_at']
+
+
+# GraphQL Schema
+class BigCommerceType(ObjectType):
+    id = Int()
+    token = String()
+    store_id = String()
+    updated_at = String()
+    created_at = String()
+
+
+class CreateBigCommerce(Mutation):
+    class Arguments:
+        token = String(required=True)
+        store_id = String(required=True)
+
+    big_commerce = Field(lambda: BigCommerceType)
+
+    def mutate(self, info, token, store_id):
+        try:
+            big_commerce = BigCommerce.create(
+                token=token,
+                store_id=store_id,
+                updated_at=datetime.now(),
+                created_at=datetime.now()
+            )
+            return CreateBigCommerce(big_commerce=big_commerce)
+        except Exception as e:
+            raise Exception(f"Error creating record: {str(e)}")
+
+
+class UpdateBigCommerce(Mutation):
+    class Arguments:
+        id = Int()
+        token = String()
+        store_id = String()
+
+    big_commerce = Field(lambda: BigCommerceType)
+
+    def mutate(self, info, id, token=None, store_id=None):
+        big_commerce = BigCommerce.find(id)
+        if big_commerce:
+            if token:
+                big_commerce.token = token
+            if store_id:
+                big_commerce.store_id = store_id
+            big_commerce.updated_at = datetime.now()
+            big_commerce.save()
+        return UpdateBigCommerce(big_commerce=big_commerce)
+
+
+class DeleteBigCommerce(Mutation):
+    class Arguments:
+        id = Int()
+
+    success = String()
+
+    def mutate(self, info, id):
+        big_commerce = BigCommerce.find(id)
+        if big_commerce:
+            big_commerce.delete()
+            return DeleteBigCommerce(success="Deleted Successfully")
+        return DeleteBigCommerce(success="Not Found")
+
+
+class BigCommercePaginatedType(ObjectType):
+    total = Int()  # Total count of records
+    items = List(BigCommerceType)  # Paginated items
+
+
+class Query(ObjectType):
+    get_big_commerce = Field(BigCommerceType, id=Int())
+    get_all_big_commerce = Field(BigCommercePaginatedType, limit=Int(
+        default_value=2), offset=Int(default_value=0))
+
+    def resolve_get_big_commerce(self, info, id):
+        return BigCommerce.find(id)
+
+    def resolve_get_all_big_commerce(self, info, limit, offset):
+        # Get the total count of records
+        total_records = BigCommerce.count()
+
+        # Paginate the query
+        query = BigCommerce.order_by('id')
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+
+        paginated_items = query.get()
+
+        return BigCommercePaginatedType(total=total_records, items=paginated_items)
+
+
+class Mutation(ObjectType):
+    create_big_commerce = CreateBigCommerce.Field()
+    update_big_commerce = UpdateBigCommerce.Field()
+    delete_big_commerce = DeleteBigCommerce.Field()
+
+
+schema = Schema(query=Query, mutation=Mutation)
+
+app.add_url_rule(
+    "/graphql", view_func=GraphQLView.as_view("graphql", schema=schema, graphiql=True)
+)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
