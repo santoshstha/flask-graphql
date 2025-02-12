@@ -1,5 +1,13 @@
 # Flask GraphQL(Basic CRUD )
 
+Clone the repository:
+
+git clone https://github.com/santoshstha/flask-graphql.git  
+cd flask-graphql
+
+For running projects
+docker-compose up --build
+
 A brief description of what this project does and who it's for
 
 System Documentation
